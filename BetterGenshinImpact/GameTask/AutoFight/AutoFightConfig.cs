@@ -31,7 +31,13 @@ public partial class AutoFightConfig : ObservableObject
     /// 多种用分号分隔，例如:白术;钟离,12;，如果人名，则用内置cd检查，如果是人名和数字，则把数字当做出招cd(秒)。
     /// </summary>
     [ObservableProperty] private string _actionSchedulerByCd = "";
-    
+    /// <summary>
+    /// 只拾取精英掉落
+    /// Closed ：关闭功能
+    /// AllowAutoPickupForNonElite: 非精英允许自动拾取：战斗过程中掉落脚下的可以自动拾取，但不会执行万叶拾取和拾取配置逻辑。
+    /// DisableAutoPickupForNonElite: 非精英关闭拾取：战斗过程中掉落到脚下的也不会自动拾取。
+    /// </summary>
+    [ObservableProperty] private string _onlyPickEliteDropsMode = "Closed";
     [Serializable]
     public partial class FightFinishDetectConfig : ObservableObject
     {
@@ -95,6 +101,13 @@ public partial class AutoFightConfig : ObservableObject
     /// </summary>
     [ObservableProperty]
     private bool _kazuhaPickupEnabled = true;
+    
+    /// <summary>
+    /// 战斗结束后，如果不存在万叶，则切换至存在万叶的队伍（基于开启万叶拾取情况下）
+    /// </summary>
+    [ObservableProperty]
+    private string _kazuhaPartyName = "";
+    
 
     /// <summary>
     /// 战斗超时，单位秒
