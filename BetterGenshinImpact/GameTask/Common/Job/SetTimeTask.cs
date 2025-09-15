@@ -21,7 +21,7 @@ public class SetTimeTask
 
     private readonly ReturnMainUiTask _returnMainUiTask = new();
 
-    public async Task Start(int hour, int minute, CancellationToken ct, bool skipTimeAdjustmentAnimation = false)
+    public async Task Start(int hour, int minute, CancellationToken ct, bool skipTimeAdjustmentAnimation = true)
     {
         try
         {
@@ -39,7 +39,7 @@ public class SetTimeTask
         }
     }
 
-    public async Task DoOnce(int hour, int minute, CancellationToken ct, bool skipTimeAdjustmentAnimation = false)
+    public async Task DoOnce(int hour, int minute, CancellationToken ct, bool skipTimeAdjustmentAnimation = true)
     {
         // 半径
         const int r1 = 30;
@@ -63,7 +63,7 @@ public class SetTimeTask
             // 跳过调整动画
             await Delay(1, ct);
             await CancelAnimation(ct);
-            await Delay(200, ct);
+            await Delay(500, ct);
             GameCaptureRegion.GameRegion1080PPosClick(45, 715);
             await Delay(400, ct);
             await _returnMainUiTask.Start(ct);
@@ -83,8 +83,9 @@ public class SetTimeTask
     private async Task CancelAnimation(CancellationToken ct)
     {
         GameCaptureRegion.GameRegion1080PPosMove(200, 200);
-        Simulation.SendInput.Mouse.LeftButtonDown();
         await Delay(10, ct);
+        Simulation.SendInput.Mouse.LeftButtonDown();
+        await Delay(1, ct);
         Simulation.SendInput.Mouse.LeftButtonUp();
     }
 
