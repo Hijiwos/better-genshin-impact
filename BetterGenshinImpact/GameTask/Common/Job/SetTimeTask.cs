@@ -82,10 +82,16 @@ public class SetTimeTask
     // 取消动画函数
     private async Task CancelAnimation(CancellationToken ct)
     {
-        GameCaptureRegion.GameRegion1080PPosMove(200, 200);
-        Simulation.SendInput.Mouse.LeftButtonDown();
-        await Delay(10, ct);
-        Simulation.SendInput.Mouse.LeftButtonUp();
+        GameCaptureRegion.GameRegion1080PPosMove(730, 500);
+		for (int i = 0; i < 4; i++)
+		{
+			Simulation.SendInput.Mouse.LeftButtonDown();
+			await Delay(1, ct);
+			Simulation.SendInput.Mouse.LeftButtonUp();
+			await Delay(1, ct);
+		}
+		await Delay(1, ct);
+		Simulation.SendInput.Keyboard.KeyPress(User32.VK.VK_ESCAPE);
     }
 
     double[] GetPosition(double r, double index)
