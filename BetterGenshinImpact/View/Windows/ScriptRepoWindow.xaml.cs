@@ -256,7 +256,7 @@ public partial class ScriptRepoWindow
             IsUpdating = true;
             UpdateProgressValue = 0;
             UpdateProgressText = "准备更新，请耐心等待...";
-            
+
             // 执行更新
             var (_, updated) = await ScriptRepoUpdater.Instance.UpdateCenterRepoByGit(repoUrl,
                 (path, steps, totalSteps) =>
@@ -279,7 +279,7 @@ public partial class ScriptRepoWindow
         }
         catch (Exception ex)
         {
-            await MessageBox.ErrorAsync($"更新失败，可尝试重置仓库后重新更新。失败原因：{ex.Message}");
+            await ThemedMessageBox.ErrorAsync($"更新失败，可尝试重置仓库后重新更新。失败原因：{ex.Message}");
         }
         finally
         {
@@ -289,11 +289,77 @@ public partial class ScriptRepoWindow
     }
 
     [RelayCommand]
-    private void OpenLocalScriptRepo()
+    private async Task OpenLocalScriptRepo()
     {
-        TaskContext.Instance().Config.ScriptConfig.ScriptRepoHintDotVisible = false;
-        ScriptRepoUpdater.Instance.OpenLocalRepoInWebView();
-        Close();
+        // 检查是否需要提示用户更新仓库
+        var shouldContinue = await CheckAndPromptRepoUpdate();
+        if (shouldContinue)
+        {
+            TaskContext.Instance().Config.ScriptConfig.ScriptRepoHintDotVisible = false;
+            ScriptRepoUpdater.Instance.OpenLocalRepoInWebView();
+            Close();
+        }
+    }
+
+    /// <summary>
+    /// 检查仓库更新时间并提示用户
+    /// </summary>
+    /// <returns>是否继续打开仓库（true: 继续打开, false: 取消操作）</returns>
+    private async Task<bool> CheckAndPromptRepoUpdate()
+    {
+        TimeSpan timeSinceUpdate;
+        try
+        {
+            // 检查仓库文件夹是否存在
+            if (!Directory.Exists(ScriptRepoUpdater.CenterRepoPath))
+            {
+                return true;
+            }
+
+            // 查找 repo.json 文件
+            var repoJsonPath = Directory.GetFiles(ScriptRepoUpdater.CenterRepoPath, "repo.json", SearchOption.AllDirectories).FirstOrDefault();
+            if (repoJsonPath == null || !File.Exists(repoJsonPath))
+            {
+                return true;
+            }
+
+            // 获取 repo.json 文件的最后修改时间
+            var repoJsonFile = new FileInfo(repoJsonPath);
+            DateTime lastUpdateTime = repoJsonFile.LastWriteTime;
+
+            // 检查是否超过 30 天
+            timeSinceUpdate = DateTime.Now - lastUpdateTime;
+            if (timeSinceUpdate.TotalDays <= 30)
+            {
+                return true;
+            }
+        }
+        catch
+        {
+            // 出现异常时，继续打开仓库
+            return true;
+        }
+
+        // 提示用户更新
+        var dialog = new RepoUpdateDialog((int)timeSinceUpdate.TotalDays);
+        var result = await dialog.ShowDialogAsync();
+
+        if (result == Wpf.Ui.Controls.MessageBoxResult.Primary)
+        {
+            // 用户选择"立即更新"
+            await UpdateRepo();
+            return false;
+        }
+        else if (result == Wpf.Ui.Controls.MessageBoxResult.Secondary)
+        {
+            // 用户选择"直接打开"
+            return true;
+        }
+        else
+        {
+            // 用户关闭对话框（点击 X 或按 ESC）
+            return false;
+        }
     }
 
     [RelayCommand]
@@ -306,11 +372,11 @@ public partial class ScriptRepoWindow
         }
 
         // 添加确认对话框
-        var result = await MessageBox.ShowAsync(
+        var result = await ThemedMessageBox.ShowAsync(
             "确定要重置脚本仓库吗？无法正常更新时候可以使用本功能，重置后请重新更新脚本仓库。",
             "确认重置",
             MessageBoxButton.YesNo,
-            MessageBoxImage.Warning);
+            ThemedMessageBox.MessageBoxIcon.Warning);
 
         if (result == MessageBoxResult.Yes)
         {
@@ -536,7 +602,7 @@ public partial class ScriptRepoWindow
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"无法打开链接: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+            ThemedMessageBox.Warning($"无法打开链接: {ex.Message}", "错误");
         }
         e.Handled = true;
     }
