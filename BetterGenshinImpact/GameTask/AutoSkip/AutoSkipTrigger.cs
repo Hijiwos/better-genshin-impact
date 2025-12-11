@@ -591,6 +591,16 @@ public partial class AutoSkipTrigger : ITaskTrigger
                         if (_config.AutoGetDailyRewardsEnabled && (item.Text.Contains("每日") || item.Text.Contains("委托")))
                         {
                             ClickOcrRegion(item, "每日委托");
+                            TaskControl.Sleep(800);
+                            
+                            // 6.2 每日提示确认
+                            var ra1 = TaskControl.CaptureToRectArea();
+                            if (Bv.ClickBlackConfirmButton(ra1))
+                            {
+                                _logger.LogInformation("存在提示并确认");
+                            }
+                            ra1.Dispose();
+                            
                             _prevGetDailyRewardsTime = DateTime.Now; // 记录领取时间
                         }
                         else if (_config.AutoReExploreEnabled && (item.Text.Contains("探索") || item.Text.Contains("派遣")))
@@ -649,6 +659,16 @@ public partial class AutoSkipTrigger : ITaskTrigger
             }
 
             return true;
+        }
+        else
+        {
+            // 没有气泡的时候识别 F 选项
+            using var pickRa = region.Find(AutoPickAssets.Instance.ChatPickRo);
+            if (pickRa.IsExist())
+            {
+                _postMessageSimulator?.KeyPressBackground(AutoPickAssets.Instance.PickVk);
+                AutoSkipLog("无气泡图标，但存在交互键，直接按下交互键");
+            }
         }
 
         return false;
