@@ -607,7 +607,12 @@ public class AutoFightTask : ISoloTask
                 if (picker.Name == "枫原万叶")
                 {
                     var time = TimeSpan.FromSeconds(picker.GetSkillCdSeconds());
-                    if (!(lastFightName == picker.Name && time.TotalSeconds > 3))
+
+                    // 如果配置了二次拾取，或者不满足跳过条件（上次是万叶且冷却时间>3秒），则执行拾取
+                    bool shouldSkip = lastFightName == picker.Name && time.TotalSeconds > 3;
+                    bool forcePickup = _taskParam.QinDoublePickUp;
+                    
+                    if (forcePickup || !shouldSkip)
                     {
                         Logger.LogInformation("使用 枫原万叶-长E 拾取掉落物");
                         await Delay(200, ct);
@@ -724,7 +729,7 @@ public class AutoFightTask : ISoloTask
 
         if (_taskParam is { PickDropsAfterFightEnabled: true } )
         {
-            // 执行自动拾取掉落物的功能
+            // 执行扫描掉落物光柱并靠近的功能
             await new ScanPickTask().Start(ct);
         }
     }
